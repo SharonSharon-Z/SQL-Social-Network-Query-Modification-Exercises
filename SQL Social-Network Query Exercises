@@ -42,10 +42,10 @@ Find all students who do not appear in the Likes table (as a student who likes o
 select name, grade
 from Highschooler
 where ID not in (select ID1
-				from likes
-				union
-				select ID2
-				from likes)
+		from likes
+		union
+		select ID2
+		from likes)
 order by grade, name
 
 /***********************************************************
@@ -56,8 +56,8 @@ For every situation where student A likes student B, but we have no information 
 select H1.name, H1.grade, H2.name, H2.grade 
 from Highschooler H1, Highschooler H2, Likes
 where H1.ID=Likes.ID1 and H2.ID=Likes.ID2
-    and ID2 not in (select ID1
-					from likes)
+    and ID2 not in 	(select ID1
+			from likes)
 
 /***********************************************************
 Q6
@@ -66,31 +66,66 @@ Find names and grades of students who only have friends in the same grade. Retur
 ***********************************************************/
 select h1name,h1grade
 from 	(select H1.name as h1name, H1.grade as h1grade, H2.name as h2name, H2.grade as h2grade
-		from Highschooler H1, Friend, Highschooler H2
-		where H1.ID=Friend.ID1 and H2.ID=Friend.ID2 
-		group by H1.ID
-		having count(distinct H2.grade)=1) A
+	from Highschooler H1, Friend, Highschooler H2
+	where H1.ID=Friend.ID1 and H2.ID=Friend.ID2 
+	group by H1.ID
+	having count(distinct H2.grade)=1) A
 where  h1grade=h2grade
 order by h1grade, h1name
 
 /***********************************************************
-Q1
+Q7
 1/1 point (graded)
-Find the names of all students who are friends with someone named Gabriel.
+For each student A who likes a student B where the two are not friends, find if they have a friend C in common (who can introduce them!). For all such trios, return the name and grade of A, B, and C.
 ***********************************************************/
+select H1.name, H1.grade, H2.name, H2.grade, H3.name, H3.grade
+from 	Highschooler H1, Highschooler H2, Highschooler H3,
+		(select T1.likeID1 as like1, T1.likeID2 as like2, T1.friendID2 as friend
+		from 	
+		 		(select likeID1, likeID2, Friend.ID2 as friendID2
+				from	(select Likes.ID1 as likeID1,Likes.ID2 as likeID2
+						from Likes, Friend
+						where Friend.ID1=Likes.ID1 and Friend.ID2<>Likes.ID2
+						except
+						select Likes.ID1 as likeID1, Likes.ID2 as likeID2
+						from Likes, Friend
+						where Friend.ID1=Likes.ID1 and Friend.ID2=Likes.ID2) Likes,
+						Friend
+				where Likes.likeID1=Friend.ID1) T1,
 
+				(select likeID1, likeID2, Friend.ID1 as friendID1
+				from	(select Likes.ID1 as likeID1,Likes.ID2 as likeID2
+						from Likes, Friend
+						where Friend.ID1=Likes.ID1 and Friend.ID2<>Likes.ID2
+						except
+						select Likes.ID1 as likeID1, Likes.ID2 as likeID2
+						from Likes, Friend
+						where Friend.ID1=Likes.ID1 and Friend.ID2=Likes.ID2) Likes,
+						Friend
+				where Likes.likeID2=Friend.ID2) T2
+		where T1.likeID1=T2.likeID1 and T1.likeID2=T2.likeID2 and T1.friendID2=T2.friendID1) T
+where T.like1=H1.ID and T.like2=H2.ID and T.friend=H3.ID
 
 /***********************************************************
-Q1
+Q8
 1/1 point (graded)
-Find the names of all students who are friends with someone named Gabriel.
+Find the difference between the number of students in the school and the number of different first names.
 ***********************************************************/
-
+select total-totalFirstName
+from 	(select count(*) as total
+	from Highschooler),
+	(select count(distinct name) as totalFirstName
+	from Highschooler)
 
 /***********************************************************
-Q1
+Q9
 1/1 point (graded)
-Find the names of all students who are friends with someone named Gabriel.
+Find the name and grade of all students who are liked by more than one other student.
 ***********************************************************/
-
+select name, grade
+from Highschooler
+where ID in 	(select ID2
+		from Likes
+		group by ID2
+		having count(*)>1)
 
